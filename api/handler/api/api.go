@@ -26,10 +26,7 @@ const (
 func (a *apiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	request, err := requestToProto(r)
 	if err != nil {
-		er := errors.InternalServerError("go.micro.api", err.Error())
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(500)
-		w.Write([]byte(er.Error()))
+		DefaultErrHandler(w, r, errors.InternalServerError("go.micro.api", err.Error()).(*errors.Error))
 		return
 	}
 
@@ -42,19 +39,13 @@ func (a *apiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// try get service from router
 		s, err := a.opts.Router.Route(r)
 		if err != nil {
-			er := errors.InternalServerError("go.micro.api", err.Error())
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(500)
-			w.Write([]byte(er.Error()))
+			DefaultErrHandler(w, r, errors.InternalServerError("go.micro.api", err.Error()).(*errors.Error))
 			return
 		}
 		service = s
 	} else {
 		// we have no way of routing the request
-		er := errors.InternalServerError("go.micro.api", "no route found")
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(500)
-		w.Write([]byte(er.Error()))
+		DefaultErrHandler(w, r, errors.InternalServerError("go.micro.api", "no route found").(*errors.Error))
 		return
 	}
 
@@ -69,32 +60,13 @@ func (a *apiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	so := selector.WithStrategy(strategy(service.Services))
 
 	if err := c.Call(cx, req, rsp, client.WithSelectOption(so)); err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		ce := errors.Parse(err.Error())
-		switch ce.Code {
-		case 0:
-			w.WriteHeader(500)
-		default:
-			w.WriteHeader(int(ce.Code))
-		}
-		w.Write([]byte(ce.Error()))
+		DefaultErrHandler(w, r, errors.Parse(err.Error()))
 		return
 	} else if rsp.StatusCode == 0 {
 		rsp.StatusCode = http.StatusOK
 	}
 
-	for _, header := range rsp.GetHeader() {
-		for _, val := range header.Values {
-			w.Header().Add(header.Key, val)
-		}
-	}
-
-	if len(w.Header().Get("Content-Type")) == 0 {
-		w.Header().Set("Content-Type", "application/json")
-	}
-
-	w.WriteHeader(int(rsp.StatusCode))
-	w.Write([]byte(rsp.Body))
+	DefaultRespHandler(w, r, rsp)
 }
 
 func (a *apiHandler) String() string {
