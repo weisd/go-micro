@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"net/http"
 
 	api "github.com/micro/go-micro/api/proto"
@@ -11,13 +12,13 @@ import (
 var RPCErrCode = 500
 
 // ErrHandler 错误处理
-type ErrHandler func(w http.ResponseWriter, r *http.Request, err *errors.Error)
+type ErrHandler func(ctx context.Context, w http.ResponseWriter, r *http.Request, err *errors.Error)
 
 // RespHandler 成功返回值处理
-type RespHandler func(w http.ResponseWriter, r *http.Request, rsp *api.Response)
+type RespHandler func(ctx context.Context, w http.ResponseWriter, r *http.Request, rsp *api.Response)
 
 // DefaultErrHandler DefaultErrHandler
-var DefaultErrHandler = func(w http.ResponseWriter, r *http.Request, err *errors.Error) {
+var DefaultErrHandler = func(ctx context.Context, w http.ResponseWriter, r *http.Request, err *errors.Error) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(500)
 	w.Write([]byte(err.Error()))
@@ -25,7 +26,7 @@ var DefaultErrHandler = func(w http.ResponseWriter, r *http.Request, err *errors
 }
 
 // DefaultRespHandler DefaultRespHandler
-var DefaultRespHandler = func(w http.ResponseWriter, r *http.Request, rsp *api.Response) {
+var DefaultRespHandler = func(ctx context.Context, w http.ResponseWriter, r *http.Request, rsp *api.Response) {
 	for _, header := range rsp.GetHeader() {
 		for _, val := range header.Values {
 			w.Header().Add(header.Key, val)

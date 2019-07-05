@@ -2,6 +2,7 @@
 package api
 
 import (
+	"context"
 	"net/http"
 
 	goapi "github.com/micro/go-micro/api"
@@ -26,7 +27,7 @@ const (
 func (a *apiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	request, err := requestToProto(r)
 	if err != nil {
-		DefaultErrHandler(w, r, errors.InternalServerError("go.micro.api", err.Error()).(*errors.Error))
+		DefaultErrHandler(context.Background(), w, r, errors.InternalServerError("go.micro.api", err.Error()).(*errors.Error))
 		return
 	}
 
@@ -39,13 +40,13 @@ func (a *apiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// try get service from router
 		s, err := a.opts.Router.Route(r)
 		if err != nil {
-			DefaultErrHandler(w, r, errors.InternalServerError("go.micro.api", err.Error()).(*errors.Error))
+			DefaultErrHandler(context.Background(), w, r, errors.InternalServerError("go.micro.api", err.Error()).(*errors.Error))
 			return
 		}
 		service = s
 	} else {
 		// we have no way of routing the request
-		DefaultErrHandler(w, r, errors.InternalServerError("go.micro.api", "no route found").(*errors.Error))
+		DefaultErrHandler(context.Background(), w, r, errors.InternalServerError("go.micro.api", "no route found").(*errors.Error))
 		return
 	}
 
@@ -60,13 +61,13 @@ func (a *apiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	so := selector.WithStrategy(strategy(service.Services))
 
 	if err := c.Call(cx, req, rsp, client.WithSelectOption(so)); err != nil {
-		DefaultErrHandler(w, r, errors.Parse(err.Error()))
+		DefaultErrHandler(cx, w, r, errors.Parse(err.Error()))
 		return
 	} else if rsp.StatusCode == 0 {
 		rsp.StatusCode = http.StatusOK
 	}
 
-	DefaultRespHandler(w, r, rsp)
+	DefaultRespHandler(cx, w, r, rsp)
 }
 
 func (a *apiHandler) String() string {
