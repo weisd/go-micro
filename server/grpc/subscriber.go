@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/micro/go-micro/broker"
 	"github.com/micro/go-micro/codec"
@@ -169,6 +170,10 @@ func (g *grpcServer) createSubHandler(sb *subscriber, opts server.Options) broke
 	return func(p broker.Publication) error {
 		msg := p.Message()
 		ct := msg.Header["Content-Type"]
+		if len(ct) == 0 {
+			msg.Header["Content-Type"] = defaultContentType
+			ct = defaultContentType
+		}
 		cf, err := g.newCodec(ct)
 		if err != nil {
 			return err
@@ -180,6 +185,8 @@ func (g *grpcServer) createSubHandler(sb *subscriber, opts server.Options) broke
 		}
 		delete(hdr, "Content-Type")
 		ctx := metadata.NewContext(context.Background(), hdr)
+
+		results := make(chan error, len(sb.handlers))
 
 		for i := 0; i < len(sb.handlers); i++ {
 			handler := sb.handlers[i]
@@ -231,15 +238,28 @@ func (g *grpcServer) createSubHandler(sb *subscriber, opts server.Options) broke
 				fn = opts.SubWrappers[i-1](fn)
 			}
 
-			g.wg.Add(1)
+			if g.wg != nil {
+				g.wg.Add(1)
+			}
 			go func() {
-				defer g.wg.Done()
-				fn(ctx, &rpcMessage{
+				if g.wg != nil {
+					defer g.wg.Done()
+				}
+				results <- fn(ctx, &rpcMessage{
 					topic:       sb.topic,
 					contentType: ct,
 					payload:     req.Interface(),
 				})
 			}()
+		}
+		var errors []string
+		for i := 0; i < len(sb.handlers); i++ {
+			if err := <-results; err != nil {
+				errors = append(errors, err.Error())
+			}
+		}
+		if len(errors) > 0 {
+			return fmt.Errorf("subscriber error: %s", strings.Join(errors, "\n"))
 		}
 		return nil
 	}
