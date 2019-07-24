@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/json-iterator/go"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/micro/go-micro/codec"
 	"github.com/micro/go-micro/codec/bytes"
 	"github.com/micro/go-micro/codec/jsonrpc"
@@ -36,6 +36,9 @@ var (
 		"application/protobuf":     protorpc.NewCodec,
 		"application/proto-rpc":    protorpc.NewCodec,
 		"application/octet-stream": protorpc.NewCodec,
+		"application/grpc+json":    jsonrpc.NewCodec,
+		"application/grpc+proto":   protorpc.NewCodec,
+		"application/grpc+bytes":   bytes.NewCodec,
 	}
 
 	json = jsoniter.ConfigCompatibleWithStandardLibrary

@@ -38,6 +38,9 @@ var (
 		"application/protobuf":     protorpc.NewCodec,
 		"application/proto-rpc":    protorpc.NewCodec,
 		"application/octet-stream": protorpc.NewCodec,
+		"application/grpc+json":    jsonrpc.NewCodec,
+		"application/grpc+proto":   protorpc.NewCodec,
+		"application/grpc+bytes":   bytes.NewCodec,
 	}
 )
 
