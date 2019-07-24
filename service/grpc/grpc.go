@@ -5,11 +5,10 @@ import (
 
 	"github.com/micro/go-micro"
 	mclient "github.com/micro/go-micro/client"
-	server "github.com/micro/go-micro/server"
-	"github.com/micro/go-micro"
-	broker "github.com/micro/go-plugins/broker/grpc"
 	client "github.com/micro/go-micro/client/grpc"
+	mserver "github.com/micro/go-micro/server"
 	server "github.com/micro/go-micro/server/grpc"
+	broker "github.com/micro/go-plugins/broker/grpc"
 )
 
 // NewService returns a grpc service compatible with go-micro.Service
@@ -20,7 +19,6 @@ func NewService(opts ...micro.Option) micro.Service {
 	c := client.NewClient(mclient.Broker(b))
 	// our grpc server
 	s := server.NewServer(mserver.Broker(b))
-	
 
 	// create options with priority for our opts
 	options := []micro.Option{
