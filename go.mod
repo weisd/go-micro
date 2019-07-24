@@ -40,7 +40,7 @@ require (
 	github.com/lucas-clemente/quic-go v0.11.2
 	github.com/micro/cli v0.2.0
 	github.com/micro/examples v0.1.0 // indirect
-	github.com/micro/go-plugins/broker/grpc v1.1.1
+	github.com/micro/go-plugins v1.0.0
 	github.com/micro/mdns v0.1.1-0.20190624125042-790ba6222fe3
 	github.com/microcosm-cc/bluemonday v1.0.2 // indirect
 	github.com/mitchellh/hashstructure v1.0.0
